@@ -1,0 +1,102 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Nutritionist {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  specialty     String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Unique link identifier for patient registration
+  inviteCode    String    @unique @default(cuid())
+
+  // Relations
+  patients      Patient[]
+
+  @@map("nutritionists")
+}
+
+model Patient {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  password        String
+  name            String
+  age             Int?
+  weight          Float?
+  height          Float?
+  gender          String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relationship with nutritionist
+  nutritionistId  String
+  nutritionist    Nutritionist  @relation(fields: [nutritionistId], references: [id])
+
+  // Relations
+  meals           Meal[]
+
+  @@map("patients")
+}
+
+model Meal {
+  id              String    @id @default(cuid())
+  patientId       String
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Meal information
+  imageUrl        String
+  mealType        String    // breakfast, lunch, dinner, snack
+  description     String?
+  createdAt       DateTime  @default(now())
+
+  // Nutrition analysis
+  calories        Float?
+  protein         Float?
+  carbs           Float?
+  fats            Float?
+  fiber           Float?
+  analysisData    String?   // JSON string with detailed analysis
+  analyzed        Boolean   @default(false)
+
+  @@map("meals")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  userType     String   // 'nutritionist' or 'patient'
+  expires      DateTime
+
+  @@map("sessions")
+}
